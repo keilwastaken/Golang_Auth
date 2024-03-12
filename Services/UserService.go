@@ -38,7 +38,7 @@ func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*m
 	//TODO CHECK IF THE EMAIL IS VALID
 	//TODO CHECK IF THE PASSWORD IS VALID
 
-	//remove spaces in username
+	//remove spaces from username
 	pUserRegisterDto.Username = html.EscapeString(strings.TrimSpace(pUserRegisterDto.Username))
 
 	result, Error := us.usersRepository.RegisterUser(pUserRegisterDto)
