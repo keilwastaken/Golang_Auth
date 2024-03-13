@@ -6,7 +6,6 @@ import (
 	"Clarity_go/Services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"log"
 	"net/http"
 )
 
@@ -33,11 +32,7 @@ func (uc UsersController) Register(ctx *gin.Context) {
 
 	registerResult, err := uc.usersService.RegisterUser(xRegisterDto)
 	if err != nil {
-		// Log the error without terminating the program
-		log.Printf("Failed to insert user: %v", err)
-
-		// Respond with an appropriate error message
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		ctx.JSON(err.Status, gin.H{"error": err.Message})
 		return
 	}
 
@@ -70,7 +65,7 @@ func (uc UsersController) Login(ctx *gin.Context) {
 	}
 
 	// Look up for requested user
-	xUser, err := uc.usersService.Login(ctx, xRegisterDto)
+	xUser, err := uc.usersService.Login(xRegisterDto)
 	if err != nil {
 		ctx.JSON(err.Status, gin.H{"error": err.Message})
 		return
@@ -89,5 +84,15 @@ func (uc UsersController) Login(ctx *gin.Context) {
 
 func (uc UsersController) Logout(ctx *gin.Context) {
 
-	println("User logout route hit")
+	ctx.JSON(http.StatusOK, gin.H{"message": "User logged out hit successfully there is no implementation for logout... yet!"})
+}
+
+func (uc UsersController) Validate(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	// user.(models.User).Email    -->   to access specific data
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": user,
+	})
 }

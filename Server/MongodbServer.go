@@ -43,17 +43,6 @@ func NewMongoService(pEnvironment *Config.Config) *MongoService {
 	}
 }
 
-//func GetUserCollection(pClient *mongo.Client) *mongo.Collection {
-//	collection := getCollection(pClient, "users") // Assuming your collection name is "users"
-//	return collection
-//}
-
 func (ms MongoService) GetUserCollection() *mongo.Collection {
 	return ms.UserCollection
-}
-
-// get database collections
-func getCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	collection := client.Database("Clarity").Collection(collectionName)
-	return collection
 }

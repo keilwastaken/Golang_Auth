@@ -4,13 +4,12 @@ import (
 	"Clarity_go/Interfaces"
 	"Clarity_go/Models"
 	"context"
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -28,9 +27,23 @@ func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) 
 
 	// Create a new User model from the UserRegisterDto
 	newUser := Models.User{
-		Id:       primitive.NewObjectID(),   // Generate a new ObjectID
-		Email:    pUserRegisterDto.Username, // Assuming you want to use Username as Email
+		Id:       primitive.NewObjectID(), // Generate a new ObjectID
+		Email:    pUserRegisterDto.Email,  // Assuming you want to use Username as Email
 		Password: pUserRegisterDto.Password,
+	}
+	user, err := ur.isUserExists(newUser.Email)
+	if err != nil {
+		return nil, &Models.ResponseError{
+			Message: "Failed to insert user",
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	if user {
+		return nil, &Models.ResponseError{
+			Message: "User already has an account",
+			Status:  http.StatusInternalServerError,
+		}
 	}
 
 	// Insert the user
@@ -41,7 +54,6 @@ func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) 
 	userCollection := ur.mongodb.GetUserCollection()
 	result, err := userCollection.InsertOne(ctx, newUser)
 	if err != nil {
-		log.Fatalf("Failed to insert user: %v", err)
 		return nil, &Models.ResponseError{
 			Message: "Failed to insert user",
 			Status:  http.StatusInternalServerError,
@@ -51,9 +63,9 @@ func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) 
 	return result, nil
 }
 
-func (ur UsersRepository) Login(httpContext *gin.Context, pUserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
+func (ur UsersRepository) Login(pUserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
 	xUser := Models.User{
-		Email:    pUserRegisterDto.Username,
+		Email:    pUserRegisterDto.Email,
 		Password: pUserRegisterDto.Password,
 	}
 
@@ -79,4 +91,13 @@ func (ur UsersRepository) Login(httpContext *gin.Context, pUserRegisterDto Model
 	}
 
 	return &xUser, nil
+}
+
+func (ur UsersRepository) isUserExists(email string) (bool, error) {
+	collection := ur.mongodb.GetUserCollection()
+	count, err := collection.CountDocuments(context.TODO(), bson.M{"email": strings.ToLower(email)})
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

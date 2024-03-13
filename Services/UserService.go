@@ -3,13 +3,13 @@ package Services
 import (
 	"Clarity_go/Models"
 	"Clarity_go/Repository"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"html"
 	"net/http"
-	"strings"
+	"net/mail"
+	"regexp"
 )
 
 type UsersService struct {
@@ -23,6 +23,24 @@ func NewUsersService(usersRepository *Repository.UsersRepository) *UsersService 
 }
 
 func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*mongo.InsertOneResult, *Models.ResponseError) {
+
+	if !isValidEmail(pUserRegisterDto.Email) {
+		return nil,
+			&Models.ResponseError{
+				Message: "Invalid email",
+				Status:  http.StatusBadRequest,
+			}
+	}
+
+	valid, errMsg := isValidPassword(pUserRegisterDto.Password)
+	if !valid {
+		return nil,
+			&Models.ResponseError{
+				Message: errMsg,
+				Status:  http.StatusBadRequest,
+			}
+	}
+
 	//turn password into hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pUserRegisterDto.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -34,26 +52,19 @@ func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*m
 	}
 	pUserRegisterDto.Password = string(hashedPassword)
 
-	//TODO CHECK IF THE USER IS ALREADY IN THE DB
-	//TODO CHECK IF THE EMAIL IS VALID
-	//TODO CHECK IF THE PASSWORD IS VALID
-
-	//remove spaces from username
-	pUserRegisterDto.Username = html.EscapeString(strings.TrimSpace(pUserRegisterDto.Username))
-
 	result, Error := us.usersRepository.RegisterUser(pUserRegisterDto)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{
-				Message: "Failed to insert user",
+				Message: Error.Message,
 				Status:  http.StatusInternalServerError,
 			}
 	}
 	return result, nil
 }
 
-func (us UsersService) Login(ctx *gin.Context, UserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
-	xUser, responseErr := us.usersRepository.Login(ctx, UserRegisterDto)
+func (us UsersService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
+	xUser, responseErr := us.usersRepository.Login(UserRegisterDto)
 	if responseErr != nil {
 		return nil, responseErr
 	}
@@ -67,4 +78,37 @@ func (us UsersService) Login(ctx *gin.Context, UserRegisterDto Models.UserRegist
 	}
 
 	return xUser, nil
+}
+
+func isValidEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
+
+func isValidPassword(password string) (bool, string) {
+	var (
+		minLen      = 8
+		upperCase   = regexp.MustCompile(`[A-Z]`)
+		lowerCase   = regexp.MustCompile(`[a-z]`)
+		number      = regexp.MustCompile(`[0-9]`)
+		specialChar = regexp.MustCompile(`[^a-zA-Z0-9]`)
+	)
+
+	if len(password) < minLen {
+		return false, fmt.Sprintf("Password must be at least %d characters long.", minLen)
+	}
+	if !upperCase.MatchString(password) {
+		return false, "Password must contain at least one uppercase letter."
+	}
+	if !lowerCase.MatchString(password) {
+		return false, "Password must contain at least one lowercase letter."
+	}
+	if !number.MatchString(password) {
+		return false, "Password must contain at least one digit."
+	}
+	if !specialChar.MatchString(password) {
+		return false, "Password must contain at least one special character."
+	}
+
+	return true, ""
 }
