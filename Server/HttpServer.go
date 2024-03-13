@@ -4,6 +4,7 @@ import (
 	"Clarity_go/Config"
 	"Clarity_go/Controller"
 	"Clarity_go/Interfaces"
+	"Clarity_go/MiddleWare"
 	"Clarity_go/Routes"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -18,7 +19,8 @@ type HttpServer struct {
 
 func InitHttpServer(pConfig *Config.Config, pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken) HttpServer {
 	xRouter := gin.Default()
-	xUserRoutes := Routes.NewUserRoutes(pMongoDb, pToken, xRouter)
+	xAuthenticationMiddleware := MiddleWare.Authentication{}
+	xUserRoutes := Routes.NewUserRoutes(pMongoDb, pToken, xAuthenticationMiddleware, xRouter)
 	xTaskRoutes := Routes.NewTaskRoutes(pMongoDb, xRouter)
 
 	return HttpServer{
