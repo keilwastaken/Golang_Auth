@@ -15,9 +15,31 @@ import (
 type Token struct {
 }
 
+// TODO BEST TO ROTATE REFRESH TOKENS? WE SHOULD LOOK INTO IT.
 var _ Interfaces.IToken = (*Token)(nil)
 
-func (t Token) GenerateToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+func (t Token) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+
+	//TODO TOKEN LIFE SPAN IN ENV FILE
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": pId,
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(time.Minute * 15).Unix(),
+	})
+
+	SignedToken, SigningError := token.SignedString([]byte(os.Getenv("JWT_SIGNING_KEY")))
+	if SigningError != nil {
+
+		return nil, &Models.ResponseError{
+			Message: "Failed to create token",
+			Status:  http.StatusBadRequest,
+		}
+	}
+
+	return &SignedToken, nil
+}
+
+func (t Token) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
 
 	//TODO TOKEN LIFE SPAN IN ENV FILE
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

@@ -80,6 +80,30 @@ func (us UsersService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.Us
 	return xUser, nil
 }
 
+func (us UsersService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken *string) (*mongo.InsertOneResult, *Models.ResponseError) {
+	result, Error := us.usersRepository.AddRefreshTokenToDb(userId, *refreshToken)
+	if Error != nil {
+		return nil,
+			&Models.ResponseError{
+				Message: Error.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+	return result, nil
+}
+
+func (us UsersService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
+	result, Error := us.usersRepository.DeleteRefreshToken(pRefreshToken)
+	if Error != nil {
+		return nil,
+			&Models.ResponseError{
+				Message: Error.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+	return result, nil
+}
+
 func isValidEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil

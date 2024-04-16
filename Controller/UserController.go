@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"strings"
 )
 
 type UsersController struct {
@@ -45,15 +46,30 @@ func (uc UsersController) Register(ctx *gin.Context) {
 		return
 	}
 
-	token, responseErr := uc.IToken.GenerateToken(objectID)
-	if responseErr != nil {
+	xAccessToken, xError := uc.IToken.GenerateAccessToken(objectID)
+	if xError != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to create token",
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "User registered successfully", "token": token})
+	xRefreshToken, xError := uc.IToken.GenerateRefreshToken(objectID)
+	if xError != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create token",
+		})
+		return
+	}
+
+	if _, err := uc.usersService.AddRefreshTokenToDb(objectID, xRefreshToken); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create refresh token",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "User registered successfully.", "token": xAccessToken, "refreshToken": xRefreshToken})
 }
 
 func (uc UsersController) Login(ctx *gin.Context) {
@@ -71,20 +87,44 @@ func (uc UsersController) Login(ctx *gin.Context) {
 		return
 	}
 
-	token, responseErr := uc.IToken.GenerateToken(xUser.Id)
-	if responseErr != nil {
+	xAccessToken, xError := uc.IToken.GenerateAccessToken(xUser.Id)
+	if xError != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to create token",
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "User logged in successfully", "token": token})
+	//todo store refresh token in db
+	xRefreshToken, xError := uc.IToken.GenerateRefreshToken(xUser.Id)
+	if xError != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create token",
+		})
+		return
+	}
+
+	if _, err := uc.usersService.AddRefreshTokenToDb(xUser.Id, xRefreshToken); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create refresh token",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "User logged in successfully.", "accessToken": xAccessToken, "refreshToken": xRefreshToken})
 }
 
 func (uc UsersController) Logout(ctx *gin.Context) {
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "User logged out hit successfully there is no implementation for logout... yet!"})
+	refreshToken := ctx.Request.Header.Get("Authorization")
+	strippedToken := strings.TrimPrefix(refreshToken, "Bearer ")
+
+	if _, err := uc.usersService.DeleteRefreshTokenFromDb(strippedToken); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log out"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "User logged out successfully."})
 }
 
 func (uc UsersController) Validate(c *gin.Context) {
