@@ -24,7 +24,7 @@ func (t Token) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.Res
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": pId,
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Minute * 15).Unix(),
+		"exp": time.Now().Add(time.Second * 15).Unix(),
 	})
 
 	SignedToken, SigningError := token.SignedString([]byte(os.Getenv("JWT_SIGNING_KEY")))
@@ -45,7 +45,7 @@ func (t Token) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.Re
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": pId,
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"exp": time.Now().Add(time.Hour * 1).Unix(),
 	})
 
 	SignedToken, SigningError := token.SignedString([]byte(os.Getenv("JWT_SIGNING_KEY")))
@@ -64,6 +64,8 @@ func (t Token) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.Re
 // Returns the user ID from the token's claims if the token is valid,
 // and an error if it's not valid or an error occurs during validation.
 func (t Token) ValidateToken(tokenString string) (primitive.ObjectID, *Models.ResponseError) {
+	// Check bearer token format
+	// because its validation we want to make sure the token is in the correct format.
 	if len(tokenString) > 7 && strings.ToUpper(tokenString[0:7]) == "BEARER " {
 		tokenString = tokenString[7:]
 	}
@@ -71,6 +73,7 @@ func (t Token) ValidateToken(tokenString string) (primitive.ObjectID, *Models.Re
 	// Define a claims structure to extract the user ID (sub) from the token.
 	var claims jwt.MapClaims
 
+	// check token signature
 	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
 		// Ensure the token's algorithm matches the expected algorithm.
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -82,13 +85,14 @@ func (t Token) ValidateToken(tokenString string) (primitive.ObjectID, *Models.Re
 		return []byte(os.Getenv("JWT_SIGNING_KEY")), nil
 	})
 
+	//if there is an error parsing the token
 	if err != nil {
 		return primitive.NilObjectID, &Models.ResponseError{
-			Message: "Failed to parse token",
-			Status:  http.StatusBadRequest,
+			Message: "Failed to parse token, Error: " + err.Error(),
+			Status:  http.StatusUnauthorized,
 		}
 	}
-
+	//if the token is not valid
 	if !token.Valid {
 		return primitive.NilObjectID,
 			&Models.ResponseError{
@@ -102,7 +106,7 @@ func (t Token) ValidateToken(tokenString string) (primitive.ObjectID, *Models.Re
 	if err != nil {
 		return primitive.NilObjectID, &Models.ResponseError{
 			Message: "Invalid user ID in token",
-			Status:  http.StatusBadRequest,
+			Status:  http.StatusUnauthorized,
 		}
 	}
 
@@ -110,7 +114,7 @@ func (t Token) ValidateToken(tokenString string) (primitive.ObjectID, *Models.Re
 	if err != nil {
 		return primitive.NilObjectID, &Models.ResponseError{
 			Message: "Invalid user ID in token",
-			Status:  http.StatusBadRequest,
+			Status:  http.StatusUnauthorized,
 		}
 	}
 

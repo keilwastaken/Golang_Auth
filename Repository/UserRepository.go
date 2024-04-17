@@ -15,11 +15,13 @@ import (
 
 type UsersRepository struct {
 	mongodb Interfaces.IMongoService
+	IToken  Interfaces.IToken
 }
 
-func NewUsersRepository(pMongoDb Interfaces.IMongoService) *UsersRepository {
+func NewUsersRepository(pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken) *UsersRepository {
 	return &UsersRepository{
 		mongodb: pMongoDb,
+		IToken:  pToken,
 	}
 }
 
@@ -97,6 +99,42 @@ func (ur UsersRepository) Login(pUserRegisterDto Models.UserRegisterDto) (*Model
 	return &xUser, nil
 }
 
+func (ur UsersRepository) GetUserIdByToken(pToken string) (primitive.ObjectID, *Models.ResponseError) {
+	xUser, err := ur.IToken.ValidateToken(pToken)
+	if err != nil {
+		return primitive.NilObjectID, &Models.ResponseError{
+			Message: "Failed to validate token",
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	return xUser, nil
+}
+
+func (ur UsersRepository) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+
+	token, err := ur.IToken.GenerateAccessToken(pId)
+	if err != nil {
+		return nil, &Models.ResponseError{
+			Message: err.Message,
+			Status:  err.Status,
+		}
+	}
+	return token, nil
+}
+
+func (ur UsersRepository) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+	token, err := ur.IToken.GenerateRefreshToken(pId)
+	if err != nil {
+		return nil, &Models.ResponseError{
+			Message: err.Message,
+			Status:  err.Status,
+		}
+	}
+
+	return token, nil
+}
+
 func (ur UsersRepository) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken string) (*mongo.InsertOneResult, *Models.ResponseError) {
 	xRefreshTokenCollection := ur.mongodb.GetRefreshTokenCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -106,7 +144,7 @@ func (ur UsersRepository) AddRefreshTokenToDb(userId primitive.ObjectID, refresh
 		UserId:    userId,
 		Token:     refreshToken,
 		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 1),
+		ExpiresAt: time.Now().Add(time.Minute * 1),
 	}
 
 	xResult, err := xRefreshTokenCollection.InsertOne(ctx, xRefreshToken)
@@ -130,6 +168,14 @@ func (ur UsersRepository) DeleteRefreshToken(pRefreshToken string) (*mongo.Delet
 		return nil, &Models.ResponseError{
 			Message: "Failed to delete user",
 			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	// Check if the delete operation actually removed any documents
+	if xResult.DeletedCount == 0 {
+		return nil, &Models.ResponseError{
+			Message: "No refresh token found to delete",
+			Status:  http.StatusNotFound, // or http.StatusBadRequest depending on your application logic
 		}
 	}
 

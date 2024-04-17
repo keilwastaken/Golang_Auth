@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/mail"
 	"regexp"
+	"strings"
 )
 
 type UsersService struct {
@@ -80,6 +81,42 @@ func (us UsersService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.Us
 	return xUser, nil
 }
 
+func (us UsersService) GenerateBothTokens(userId primitive.ObjectID) (*string, *string, *Models.ResponseError) {
+	accessToken, err := us.usersRepository.GenerateAccessToken(userId)
+	if err != nil {
+		return nil, nil,
+			&Models.ResponseError{
+				Message: err.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+
+	refreshToken, err := us.usersRepository.GenerateRefreshToken(userId)
+	if err != nil {
+		return nil, nil,
+			&Models.ResponseError{
+				Message: err.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (us UsersService) GetUserIdByToken(ptoken string) (primitive.ObjectID, *Models.ResponseError) {
+
+	userId, err := us.usersRepository.GetUserIdByToken(ptoken)
+	if err != nil {
+		return primitive.NilObjectID,
+			&Models.ResponseError{
+				Message: err.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+
+	return userId, nil
+}
+
 func (us UsersService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken *string) (*mongo.InsertOneResult, *Models.ResponseError) {
 	result, Error := us.usersRepository.AddRefreshTokenToDb(userId, *refreshToken)
 	if Error != nil {
@@ -93,7 +130,9 @@ func (us UsersService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshTok
 }
 
 func (us UsersService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
-	result, Error := us.usersRepository.DeleteRefreshToken(pRefreshToken)
+	strippedToken := strings.TrimPrefix(pRefreshToken, "Bearer ")
+
+	result, Error := us.usersRepository.DeleteRefreshToken(strippedToken)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{

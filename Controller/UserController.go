@@ -1,7 +1,6 @@
 package Controller
 
 import (
-	"Clarity_go/Interfaces"
 	"Clarity_go/Models"
 	"Clarity_go/Services"
 	"github.com/gin-gonic/gin"
@@ -12,13 +11,11 @@ import (
 
 type UsersController struct {
 	usersService *Services.UsersService
-	IToken       Interfaces.IToken
 }
 
-func NewUsersController(usersService *Services.UsersService, pToken Interfaces.IToken) *UsersController {
+func NewUsersController(usersService *Services.UsersService) *UsersController {
 	return &UsersController{
 		usersService: usersService,
-		IToken:       pToken,
 	}
 }
 
@@ -46,20 +43,11 @@ func (uc UsersController) Register(ctx *gin.Context) {
 		return
 	}
 
-	xAccessToken, xError := uc.IToken.GenerateAccessToken(objectID)
-	if xError != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create token",
-		})
+	xAccessToken, xRefreshToken, err := uc.usersService.GenerateBothTokens(objectID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Message})
 		return
-	}
 
-	xRefreshToken, xError := uc.IToken.GenerateRefreshToken(objectID)
-	if xError != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create token",
-		})
-		return
 	}
 
 	if _, err := uc.usersService.AddRefreshTokenToDb(objectID, xRefreshToken); err != nil {
@@ -87,20 +75,14 @@ func (uc UsersController) Login(ctx *gin.Context) {
 		return
 	}
 
-	xAccessToken, xError := uc.IToken.GenerateAccessToken(xUser.Id)
-	if xError != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create token",
-		})
+	xAccessToken, xRefreshToken, err := uc.usersService.GenerateBothTokens(xUser.Id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Message})
 		return
 	}
 
-	//todo store refresh token in db
-	xRefreshToken, xError := uc.IToken.GenerateRefreshToken(xUser.Id)
-	if xError != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create token",
-		})
+	if _, err := uc.usersService.DeleteRefreshTokenFromDb(*xRefreshToken); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove token from db"})
 		return
 	}
 
@@ -112,6 +94,51 @@ func (uc UsersController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "User logged in successfully.", "accessToken": xAccessToken, "refreshToken": xRefreshToken})
+}
+
+type TokenRequest struct {
+	RefreshToken string `json:"refreshToken"` // Field names must be capitalized for the JSON decoder to see them
+}
+
+func (uc UsersController) RefreshTokens(ctx *gin.Context) {
+	var xTokenRequest TokenRequest
+
+	if err := ctx.ShouldBindJSON(&xTokenRequest); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	// Use the refresh token from the parsed JSON
+	refreshToken := xTokenRequest.RefreshToken
+	if refreshToken == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token is required"})
+		return
+	}
+	xUserId, err := uc.usersService.GetUserIdByToken(refreshToken)
+	if err != nil {
+		ctx.JSON(err.Status, gin.H{"error": err.Message})
+		return
+	}
+
+	xAccessToken, xRefreshToken, err := uc.usersService.GenerateBothTokens(xUserId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Message})
+		return
+	}
+
+	if _, err := uc.usersService.DeleteRefreshTokenFromDb(refreshToken); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove token from db"})
+		return
+	}
+
+	if _, err := uc.usersService.AddRefreshTokenToDb(xUserId, xRefreshToken); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create refresh token",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Token refresh successfully.", "accessToken": xAccessToken, "refreshToken": xRefreshToken})
 }
 
 func (uc UsersController) Logout(ctx *gin.Context) {
