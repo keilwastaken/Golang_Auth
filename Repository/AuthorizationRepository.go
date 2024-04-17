@@ -13,21 +13,21 @@ import (
 	"time"
 )
 
-type UsersRepository struct {
+type AuthorizationRepository struct {
 	mongodb Interfaces.IMongoService
 	IToken  Interfaces.IToken
 }
 
-func NewUsersRepository(pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken) *UsersRepository {
-	return &UsersRepository{
+func NewAuthorizationRepository(pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken) *AuthorizationRepository {
+	return &AuthorizationRepository{
 		mongodb: pMongoDb,
 		IToken:  pToken,
 	}
 }
 
-func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*mongo.InsertOneResult, *Models.ResponseError) {
+func (ar AuthorizationRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*mongo.InsertOneResult, *Models.ResponseError) {
 
-	user, err := ur.isUserExists(pUserRegisterDto.Email)
+	user, err := ar.isUserExists(pUserRegisterDto.Email)
 	if err != nil {
 		return nil, &Models.ResponseError{
 			Message: "Failed to insert user",
@@ -56,7 +56,7 @@ func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) 
 
 	// TODO this should probably be in the mongodb service
 	// Correctly access the user collection from the mongodb service
-	userCollection := ur.mongodb.GetUserCollection()
+	userCollection := ar.mongodb.GetUserCollection()
 	result, err := userCollection.InsertOne(ctx, newUser)
 	if err != nil {
 		return nil, &Models.ResponseError{
@@ -68,8 +68,8 @@ func (ur UsersRepository) RegisterUser(pUserRegisterDto Models.UserRegisterDto) 
 	return result, nil
 }
 
-func (ur UsersRepository) Login(pUserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
-	userCollection := ur.mongodb.GetUserCollection()
+func (ar AuthorizationRepository) Login(pUserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
+	userCollection := ar.mongodb.GetUserCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -99,8 +99,8 @@ func (ur UsersRepository) Login(pUserRegisterDto Models.UserRegisterDto) (*Model
 	return &xUser, nil
 }
 
-func (ur UsersRepository) GetUserIdByToken(pToken string) (primitive.ObjectID, *Models.ResponseError) {
-	xUser, err := ur.IToken.ValidateToken(pToken)
+func (ar AuthorizationRepository) GetUserIdByToken(pToken string) (primitive.ObjectID, *Models.ResponseError) {
+	xUser, err := ar.IToken.ValidateToken(pToken)
 	if err != nil {
 		return primitive.NilObjectID, &Models.ResponseError{
 			Message: "Failed to validate token",
@@ -111,9 +111,9 @@ func (ur UsersRepository) GetUserIdByToken(pToken string) (primitive.ObjectID, *
 	return xUser, nil
 }
 
-func (ur UsersRepository) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+func (ar AuthorizationRepository) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
 
-	token, err := ur.IToken.GenerateAccessToken(pId)
+	token, err := ar.IToken.GenerateAccessToken(pId)
 	if err != nil {
 		return nil, &Models.ResponseError{
 			Message: err.Message,
@@ -123,8 +123,8 @@ func (ur UsersRepository) GenerateAccessToken(pId primitive.ObjectID) (*string, 
 	return token, nil
 }
 
-func (ur UsersRepository) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
-	token, err := ur.IToken.GenerateRefreshToken(pId)
+func (ar AuthorizationRepository) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
+	token, err := ar.IToken.GenerateRefreshToken(pId)
 	if err != nil {
 		return nil, &Models.ResponseError{
 			Message: err.Message,
@@ -135,8 +135,8 @@ func (ur UsersRepository) GenerateRefreshToken(pId primitive.ObjectID) (*string,
 	return token, nil
 }
 
-func (ur UsersRepository) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken string) (*mongo.InsertOneResult, *Models.ResponseError) {
-	xRefreshTokenCollection := ur.mongodb.GetRefreshTokenCollection()
+func (ar AuthorizationRepository) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken string) (*mongo.InsertOneResult, *Models.ResponseError) {
+	xRefreshTokenCollection := ar.mongodb.GetRefreshTokenCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -158,8 +158,8 @@ func (ur UsersRepository) AddRefreshTokenToDb(userId primitive.ObjectID, refresh
 	return xResult, nil
 }
 
-func (ur UsersRepository) DeleteRefreshToken(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
-	xRefreshTokenCollection := ur.mongodb.GetRefreshTokenCollection()
+func (ar AuthorizationRepository) DeleteRefreshToken(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
+	xRefreshTokenCollection := ar.mongodb.GetRefreshTokenCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -182,8 +182,8 @@ func (ur UsersRepository) DeleteRefreshToken(pRefreshToken string) (*mongo.Delet
 	return xResult, nil
 }
 
-func (ur UsersRepository) DeleteRefreshTokenByUserId(pUserId primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
-	xRefreshTokenCollection := ur.mongodb.GetRefreshTokenCollection()
+func (ar AuthorizationRepository) DeleteRefreshTokenByUserId(pUserId primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
+	xRefreshTokenCollection := ar.mongodb.GetRefreshTokenCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -198,8 +198,8 @@ func (ur UsersRepository) DeleteRefreshTokenByUserId(pUserId primitive.ObjectID)
 	return xResult, nil
 }
 
-func (ur UsersRepository) isUserExists(email string) (bool, error) {
-	collection := ur.mongodb.GetUserCollection()
+func (ar AuthorizationRepository) isUserExists(email string) (bool, error) {
+	collection := ar.mongodb.GetUserCollection()
 	count, err := collection.CountDocuments(context.TODO(), bson.M{"email": strings.ToLower(email)})
 	if err != nil {
 		return false, err

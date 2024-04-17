@@ -13,17 +13,17 @@ import (
 	"strings"
 )
 
-type UsersService struct {
-	usersRepository *Repository.UsersRepository
+type AuthorizationService struct {
+	AuthorizationRepository *Repository.AuthorizationRepository
 }
 
-func NewUsersService(usersRepository *Repository.UsersRepository) *UsersService {
-	return &UsersService{
-		usersRepository: usersRepository,
+func NewAuthorizationService(AuthorizationRepository *Repository.AuthorizationRepository) *AuthorizationService {
+	return &AuthorizationService{
+		AuthorizationRepository: AuthorizationRepository,
 	}
 }
 
-func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*mongo.InsertOneResult, *Models.ResponseError) {
+func (as AuthorizationService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*mongo.InsertOneResult, *Models.ResponseError) {
 
 	if !isValidEmail(pUserRegisterDto.Email) {
 		return nil,
@@ -53,7 +53,7 @@ func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*m
 	}
 	pUserRegisterDto.Password = string(hashedPassword)
 
-	result, Error := us.usersRepository.RegisterUser(pUserRegisterDto)
+	result, Error := as.AuthorizationRepository.RegisterUser(pUserRegisterDto)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{
@@ -64,8 +64,8 @@ func (us UsersService) RegisterUser(pUserRegisterDto Models.UserRegisterDto) (*m
 	return result, nil
 }
 
-func (us UsersService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
-	xUser, responseErr := us.usersRepository.Login(UserRegisterDto)
+func (as AuthorizationService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.User, *Models.ResponseError) {
+	xUser, responseErr := as.AuthorizationRepository.Login(UserRegisterDto)
 	if responseErr != nil {
 		return nil, responseErr
 	}
@@ -81,8 +81,8 @@ func (us UsersService) Login(UserRegisterDto Models.UserRegisterDto) (*Models.Us
 	return xUser, nil
 }
 
-func (us UsersService) GenerateBothTokens(userId primitive.ObjectID) (*string, *string, *Models.ResponseError) {
-	accessToken, err := us.usersRepository.GenerateAccessToken(userId)
+func (as AuthorizationService) GenerateBothTokens(userId primitive.ObjectID) (*string, *string, *Models.ResponseError) {
+	accessToken, err := as.AuthorizationRepository.GenerateAccessToken(userId)
 	if err != nil {
 		return nil, nil,
 			&Models.ResponseError{
@@ -91,7 +91,7 @@ func (us UsersService) GenerateBothTokens(userId primitive.ObjectID) (*string, *
 			}
 	}
 
-	refreshToken, err := us.usersRepository.GenerateRefreshToken(userId)
+	refreshToken, err := as.AuthorizationRepository.GenerateRefreshToken(userId)
 	if err != nil {
 		return nil, nil,
 			&Models.ResponseError{
@@ -103,9 +103,9 @@ func (us UsersService) GenerateBothTokens(userId primitive.ObjectID) (*string, *
 	return accessToken, refreshToken, nil
 }
 
-func (us UsersService) GetUserIdByToken(ptoken string) (primitive.ObjectID, *Models.ResponseError) {
+func (as AuthorizationService) GetUserIdByToken(ptoken string) (primitive.ObjectID, *Models.ResponseError) {
 
-	userId, err := us.usersRepository.GetUserIdByToken(ptoken)
+	userId, err := as.AuthorizationRepository.GetUserIdByToken(ptoken)
 	if err != nil {
 		return primitive.NilObjectID,
 			&Models.ResponseError{
@@ -117,8 +117,8 @@ func (us UsersService) GetUserIdByToken(ptoken string) (primitive.ObjectID, *Mod
 	return userId, nil
 }
 
-func (us UsersService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken *string) (*mongo.InsertOneResult, *Models.ResponseError) {
-	result, Error := us.usersRepository.AddRefreshTokenToDb(userId, *refreshToken)
+func (as AuthorizationService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshToken *string) (*mongo.InsertOneResult, *Models.ResponseError) {
+	result, Error := as.AuthorizationRepository.AddRefreshTokenToDb(userId, *refreshToken)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{
@@ -129,10 +129,10 @@ func (us UsersService) AddRefreshTokenToDb(userId primitive.ObjectID, refreshTok
 	return result, nil
 }
 
-func (us UsersService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
+func (as AuthorizationService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.DeleteResult, *Models.ResponseError) {
 	strippedToken := strings.TrimPrefix(pRefreshToken, "Bearer ")
 
-	result, Error := us.usersRepository.DeleteRefreshToken(strippedToken)
+	result, Error := as.AuthorizationRepository.DeleteRefreshToken(strippedToken)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{
@@ -143,8 +143,8 @@ func (us UsersService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.De
 	return result, nil
 }
 
-func (us UsersService) DeleteRefreshTokenByUserId(pUserid primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
-	result, Error := us.usersRepository.DeleteRefreshTokenByUserId(pUserid)
+func (as AuthorizationService) DeleteRefreshTokenByUserId(pUserid primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
+	result, Error := as.AuthorizationRepository.DeleteRefreshTokenByUserId(pUserid)
 	if Error != nil {
 		return nil,
 			&Models.ResponseError{
