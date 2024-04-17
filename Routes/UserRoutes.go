@@ -16,15 +16,16 @@ type UserRoutes struct {
 }
 
 func NewUserRoutes(pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken, pAuthenticationMiddleware Interfaces.IAuthenticationMiddleware, pRoutes *gin.Engine) *UserRoutes {
-	xUsersRepository := Repository.NewUsersRepository(pMongoDb)
+	xUsersRepository := Repository.NewUsersRepository(pMongoDb, pToken)
 	xUsersService := Services.NewUsersService(xUsersRepository)
-	xUsersController := Controller.NewUsersController(xUsersService, pToken)
+	xUsersController := Controller.NewUsersController(xUsersService)
 
 	xRouter := pRoutes
 	xUserGroup := xRouter.Group("/user")
 	{
 		xUserGroup.POST("/register", xUsersController.Register)
 		xUserGroup.POST("/login", xUsersController.Login)
+		xUserGroup.POST("/refresh", xUsersController.RefreshTokens)
 		xUserGroup.POST("/logout", xUsersController.Logout)
 		xUserGroup.GET("/validate", pAuthenticationMiddleware.RequireAuth(pToken), xUsersController.Validate)
 	}

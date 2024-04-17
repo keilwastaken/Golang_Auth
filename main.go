@@ -18,7 +18,7 @@ func main() {
 	mongodb := Server.NewMongoService(config)
 
 	log.Println("Initializing helpers")
-	token := &Helpers.Token{}
+	token := Helpers.NewTokenHelper(config)
 
 	log.Println("Initializing HTTP sever")
 	httpServer := Server.InitHttpServer(config, mongodb, token)

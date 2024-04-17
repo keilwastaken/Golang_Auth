@@ -12,8 +12,9 @@ import (
 )
 
 type MongoService struct {
-	Client         *mongo.Client
-	UserCollection *mongo.Collection
+	Client                 *mongo.Client
+	UserCollection         *mongo.Collection
+	RefreshTokenCollection *mongo.Collection
 }
 
 // Ensure MongoService implements IMongoService
@@ -35,14 +36,20 @@ func NewMongoService(pEnvironment *Config.Config) *MongoService {
 
 	fmt.Println("Fetching Collections")
 	xUserCollection := xClient.Database("Clarity").Collection("users")
+	xRefreshTokenCollection := xClient.Database("Clarity").Collection("refreshTokens")
 
 	fmt.Println("Connected to MongoDB and this is working")
 	return &MongoService{
-		Client:         xClient,
-		UserCollection: xUserCollection,
+		Client:                 xClient,
+		UserCollection:         xUserCollection,
+		RefreshTokenCollection: xRefreshTokenCollection,
 	}
 }
 
 func (ms MongoService) GetUserCollection() *mongo.Collection {
 	return ms.UserCollection
+}
+
+func (ms MongoService) GetRefreshTokenCollection() *mongo.Collection {
+	return ms.RefreshTokenCollection
 }

@@ -6,6 +6,7 @@ import (
 )
 
 type IToken interface {
-	GenerateToken(pId primitive.ObjectID) (*string, *Models.ResponseError)
+	GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError)
+	GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError)
 	ValidateToken(tokenString string) (primitive.ObjectID, *Models.ResponseError)
 }
