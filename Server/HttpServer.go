@@ -11,23 +11,23 @@ import (
 )
 
 type HttpServer struct {
-	config          *Config.Config
-	router          *gin.Engine
-	usersController *Controller.UsersController
-	taskController  *Controller.TaskController
+	config                  *Config.Config
+	router                  *gin.Engine
+	AuthorizationController *Controller.AuthorizationController
+	taskController          *Controller.TaskController
 }
 
 func InitHttpServer(pConfig *Config.Config, pMongoDb Interfaces.IMongoService, pToken Interfaces.IToken) HttpServer {
 	xRouter := gin.Default()
 	xAuthenticationMiddleware := MiddleWare.Authentication{}
-	xUserRoutes := Routes.NewUserRoutes(pMongoDb, pToken, xAuthenticationMiddleware, xRouter)
+	xUserRoutes := Routes.NewAuthorizationRoutes(pMongoDb, pToken, xAuthenticationMiddleware, xRouter)
 	xTaskRoutes := Routes.NewTaskRoutes(pMongoDb, xRouter)
 
 	return HttpServer{
-		config:          pConfig,
-		router:          xRouter,
-		usersController: xUserRoutes.UserController,
-		taskController:  xTaskRoutes.TaskController,
+		config:                  pConfig,
+		router:                  xRouter,
+		AuthorizationController: xUserRoutes.AuthorizationController,
+		taskController:          xTaskRoutes.TaskController,
 	}
 }
 
