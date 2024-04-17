@@ -143,6 +143,18 @@ func (us UsersService) DeleteRefreshTokenFromDb(pRefreshToken string) (*mongo.De
 	return result, nil
 }
 
+func (us UsersService) DeleteRefreshTokenByUserId(pUserid primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
+	result, Error := us.usersRepository.DeleteRefreshTokenByUserId(pUserid)
+	if Error != nil {
+		return nil,
+			&Models.ResponseError{
+				Message: Error.Message,
+				Status:  http.StatusInternalServerError,
+			}
+	}
+	return result, nil
+}
+
 func isValidEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil

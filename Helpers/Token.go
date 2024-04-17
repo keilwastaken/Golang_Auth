@@ -1,11 +1,13 @@
 package Helpers
 
 import (
+	"Clarity_go/Config"
 	"Clarity_go/Interfaces"
 	"Clarity_go/Models"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,18 +15,35 @@ import (
 )
 
 type Token struct {
+	AccessTokenLifeSpan  *time.Duration
+	RefreshTokenLifeSpan *time.Duration
 }
 
-// TODO BEST TO ROTATE REFRESH TOKENS? WE SHOULD LOOK INTO IT.
+func NewTokenHelper(pConfig *Config.Config) *Token {
+	AccessTokenExpireTime, err := time.ParseDuration(pConfig.AccessTokenLifeSpan)
+	if err != nil {
+		log.Fatalf("Failed to parse access token life span")
+	}
+
+	RefreshTokenExpireTime, err := time.ParseDuration(pConfig.RefreshTokenLifeSpan)
+	if err != nil {
+		log.Fatalf("Failed to parse refresh token life span")
+	}
+
+	return &Token{
+		AccessTokenLifeSpan:  &AccessTokenExpireTime,
+		RefreshTokenLifeSpan: &RefreshTokenExpireTime,
+	}
+}
+
 var _ Interfaces.IToken = (*Token)(nil)
 
 func (t Token) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
 
-	//TODO TOKEN LIFE SPAN IN ENV FILE
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": pId,
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Second * 15).Unix(),
+		"exp": time.Now().Add(*t.AccessTokenLifeSpan).Unix(),
 	})
 
 	SignedToken, SigningError := token.SignedString([]byte(os.Getenv("JWT_SIGNING_KEY")))
@@ -41,11 +60,10 @@ func (t Token) GenerateAccessToken(pId primitive.ObjectID) (*string, *Models.Res
 
 func (t Token) GenerateRefreshToken(pId primitive.ObjectID) (*string, *Models.ResponseError) {
 
-	//TODO TOKEN LIFE SPAN IN ENV FILE
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": pId,
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Hour * 1).Unix(),
+		"exp": time.Now().Add(*t.RefreshTokenLifeSpan).Unix(),
 	})
 
 	SignedToken, SigningError := token.SignedString([]byte(os.Getenv("JWT_SIGNING_KEY")))

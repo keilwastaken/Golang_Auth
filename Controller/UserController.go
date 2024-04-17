@@ -81,7 +81,7 @@ func (uc UsersController) Login(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := uc.usersService.DeleteRefreshTokenFromDb(*xRefreshToken); err != nil {
+	if _, err := uc.usersService.DeleteRefreshTokenByUserId(xUser.Id); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove token from db"})
 		return
 	}

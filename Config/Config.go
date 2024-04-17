@@ -7,8 +7,10 @@ import (
 )
 
 type Config struct {
-	MongodbURI    string
-	ServerAddress string
+	MongodbURI           string
+	ServerAddress        string
+	AccessTokenLifeSpan  string
+	RefreshTokenLifeSpan string
 }
 
 func Init() *Config {
@@ -18,7 +20,9 @@ func Init() *Config {
 	}
 
 	return &Config{
-		MongodbURI:    os.Getenv("MONGOURI"),
-		ServerAddress: os.Getenv("SERVERADDRESS"),
+		MongodbURI:           os.Getenv("MONGOURI"),
+		ServerAddress:        os.Getenv("SERVERADDRESS"),
+		AccessTokenLifeSpan:  os.Getenv("ACCESS_TOKEN_LIFESPAN"),
+		RefreshTokenLifeSpan: os.Getenv("REFRESH_TOKEN_LIFESPAN"),
 	}
 }

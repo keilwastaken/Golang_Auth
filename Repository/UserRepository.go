@@ -182,6 +182,22 @@ func (ur UsersRepository) DeleteRefreshToken(pRefreshToken string) (*mongo.Delet
 	return xResult, nil
 }
 
+func (ur UsersRepository) DeleteRefreshTokenByUserId(pUserId primitive.ObjectID) (*mongo.DeleteResult, *Models.ResponseError) {
+	xRefreshTokenCollection := ur.mongodb.GetRefreshTokenCollection()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	xResult, err := xRefreshTokenCollection.DeleteOne(ctx, bson.M{"userId": pUserId})
+	if err != nil {
+		return nil, &Models.ResponseError{
+			Message: "Failed to delete user",
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	return xResult, nil
+}
+
 func (ur UsersRepository) isUserExists(email string) (bool, error) {
 	collection := ur.mongodb.GetUserCollection()
 	count, err := collection.CountDocuments(context.TODO(), bson.M{"email": strings.ToLower(email)})
