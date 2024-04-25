@@ -35,6 +35,7 @@ func NewMongoService(pEnvironment *Config.Config) *MongoService {
 	}
 
 	fmt.Println("Fetching Collections")
+	//TODO these database and collections should be in the .env file.
 	xUserCollection := xClient.Database("Clarity").Collection("users")
 	xRefreshTokenCollection := xClient.Database("Clarity").Collection("refreshTokens")
 
