@@ -1,6 +1,4 @@
 # Clarity
-Personalized Task Management software
-
+Authorization server to learn golang
 
 ## Installation
-this is an update to verify things are working
