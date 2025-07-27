@@ -1,8 +1,8 @@
 package Repository
 
 import (
-	"Clarity_go/Interfaces"
-	"Clarity_go/Models"
+	"goauth/Interfaces"
+	"goauth/Models"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

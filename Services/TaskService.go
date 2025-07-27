@@ -1,6 +1,6 @@
 package Services
 
-import "Clarity_go/Repository"
+import "goauth/Repository"
 
 type TaskService struct {
 	taskRepository *Repository.TaskRepository

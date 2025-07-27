@@ -1,7 +1,7 @@
 package Repository
 
 import (
-	"Clarity_go/Interfaces"
+	"goauth/Interfaces"
 )
 
 type TaskRepository struct {

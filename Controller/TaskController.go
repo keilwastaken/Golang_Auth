@@ -1,7 +1,7 @@
 package Controller
 
 import (
-	"Clarity_go/Services"
+	"goauth/Services"
 	"github.com/gin-gonic/gin"
 )
 

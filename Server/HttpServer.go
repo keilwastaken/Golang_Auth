@@ -1,11 +1,11 @@
 package Server
 
 import (
-	"Clarity_go/Config"
-	"Clarity_go/Controller"
-	"Clarity_go/Interfaces"
-	"Clarity_go/MiddleWare"
-	"Clarity_go/Routes"
+	"goauth/Config"
+	"goauth/Controller"
+	"goauth/Interfaces"
+	"goauth/MiddleWare"
+	"goauth/Routes"
 	"github.com/gin-gonic/gin"
 	"log"
 )

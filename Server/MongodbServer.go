@@ -1,8 +1,8 @@
 package Server
 
 import (
-	"Clarity_go/Config"
-	"Clarity_go/Interfaces"
+	"goauth/Config"
+	"goauth/Interfaces"
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"

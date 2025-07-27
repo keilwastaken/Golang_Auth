@@ -1,8 +1,8 @@
 package Services
 
 import (
-	"Clarity_go/Models"
-	"Clarity_go/Repository"
+	"goauth/Models"
+	"goauth/Repository"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

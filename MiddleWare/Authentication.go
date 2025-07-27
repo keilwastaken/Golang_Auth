@@ -1,7 +1,7 @@
 package MiddleWare
 
 import (
-	"Clarity_go/Interfaces"
+	"goauth/Interfaces"
 	"github.com/gin-gonic/gin"
 )
 

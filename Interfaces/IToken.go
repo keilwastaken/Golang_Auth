@@ -1,7 +1,7 @@
 package Interfaces
 
 import (
-	"Clarity_go/Models"
+	"goauth/Models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

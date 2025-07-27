@@ -1,4 +1,4 @@
-module Clarity_go
+module goauth
 
 go 1.22.0
 

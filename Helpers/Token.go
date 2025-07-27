@@ -1,9 +1,9 @@
 package Helpers
 
 import (
-	"Clarity_go/Config"
-	"Clarity_go/Interfaces"
-	"Clarity_go/Models"
+	"goauth/Config"
+	"goauth/Interfaces"
+	"goauth/Models"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"

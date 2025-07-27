@@ -1,10 +1,10 @@
 package Routes
 
 import (
-	"Clarity_go/Controller"
-	"Clarity_go/Interfaces"
-	"Clarity_go/Repository"
-	"Clarity_go/Services"
+	"goauth/Controller"
+	"goauth/Interfaces"
+	"goauth/Repository"
+	"goauth/Services"
 	"github.com/gin-gonic/gin"
 )
 

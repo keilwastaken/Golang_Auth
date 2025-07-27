@@ -1,15 +1,15 @@
 package main
 
 import (
-	"Clarity_go/Config"
-	"Clarity_go/Helpers"
-	"Clarity_go/Server"
+	"goauth/Config"
+	"goauth/Helpers"
+	"goauth/Server"
 	"log"
 )
 
 func main() {
 
-	log.Println("Starting Runners App")
+	log.Println("Starting GoAuth Server")
 
 	log.Println("Initializing configuration")
 	config := Config.Init()

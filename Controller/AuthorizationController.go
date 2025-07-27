@@ -1,8 +1,8 @@
 package Controller
 
 import (
-	"Clarity_go/Models"
-	"Clarity_go/Services"
+	"goauth/Models"
+	"goauth/Services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
